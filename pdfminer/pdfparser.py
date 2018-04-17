@@ -45,7 +45,7 @@ class PDFBaseXRef:
 
 
 class PDFXRef(PDFBaseXRef):
-    
+
     def __init__(self):
         self.offsets = {}
         self.trailer = {}
@@ -151,7 +151,7 @@ class PDFXRefStream(PDFBaseXRef):
         index_array = stream.get('Index', (0,size))
         if len(index_array) % 2 != 0:
             raise PDFSyntaxError('Invalid index number')
-        self.objid_ranges.extend( ObjIdRange(start, nobjs) 
+        self.objid_ranges.extend( ObjIdRange(start, nobjs)
                                   for (start,nobjs) in choplist(2, index_array) )
         (self.fl1, self.fl2, self.fl3) = stream['W']
         self.data = stream.get_data()
@@ -219,7 +219,7 @@ class PDFPage:
 
     def __init__(self, doc, pageid, attrs):
         """Initialize a page object.
-        
+
         doc: a PDFDocument object.
         pageid: any Python object that can uniquely identify the page.
         attrs: a dictionary of page attributes.
@@ -261,9 +261,9 @@ class PDFDocument:
       doc.set_parser(parser)
       doc.initialize(password)
       obj = doc.getobj(objid)
-    
+
     """
-    
+
     KEYWORD_OBJ = KWD('obj')
 
     def __init__(self, caching=True):
@@ -277,7 +277,7 @@ class PDFDocument:
         self._cached_objs = {}
         self._parsed_objs = {}
         self._parsed_everything = False
-    
+
     def _parse_next_object(self, parser):
         # This is a bit awkward and I suspect that it could be a lot more elegant, but it would
         # require refactoring the parsing process and I don't want to do that yet.
@@ -290,7 +290,7 @@ class PDFDocument:
         genno = stack[-1]
         _, obj = parser.nextobject()
         return objid, genno, obj
-    
+
     def _parse_objstream(self, stream):
         # ObjStm have a special organization. First, the param "N" tells how many objs we have in
         # there. Then, they start with a list of (objids, genno) pairs, and then the actual objects
@@ -307,7 +307,7 @@ class PDFDocument:
         for objid in objids:
             _, obj = parser.nextobject()
             self._cached_objs[objid] = obj
-    
+
     def _parse_whole(self, parser):
         while True:
             try:
@@ -318,7 +318,7 @@ class PDFDocument:
                     self._parse_objstream(obj)
             except PSEOF:
                 break
-    
+
     def _parse_everything(self):
         # Sometimes, we have malformed xref, but we still want to manage to read the PDF. In cases
         # like these, the last resort is to read all objects at once so that our object reference
@@ -331,7 +331,7 @@ class PDFDocument:
         parser.reset()
         self._parse_whole(parser)
         self._parsed_everything = True
-    
+
     def _getobj(self, objid):
         if not self.xrefs:
             raise PDFException('PDFDocument is not initialized')
@@ -376,7 +376,8 @@ class PDFDocument:
                 try:
                     obj = objs[i]
                 except IndexError:
-                    raise PDFSyntaxError('Invalid object number: objid=%r' % (objid))
+                    # raise PDFSyntaxError('Invalid object number: objid=%r' % (objid))
+                    return None
                 if isinstance(obj, PDFStream):
                     obj.set_objid(objid, 0)
             else:
@@ -413,7 +414,7 @@ class PDFDocument:
         if self.decipher:
             obj = decipher_all(self.decipher, objid, genno, obj)
         return obj
-    
+
     def set_parser(self, parser):
         "Set the document to use a given PDFParser object."
         if self._parser:
@@ -508,15 +509,15 @@ class PDFDocument:
         hash = md5.md5(key)
         key = hash.digest()[:min(len(key),16)]
         return Arcfour(key).process(data)
-    
+
     def readobj(self):
         """Read the next object at current position.
-        
+
         The object doesn't have to start exactly where we are. We'll read the first
         object that comes to us.
         """
         return self._parse_next_object(self._parser)
-    
+
     def find_obj_ref(self, objid):
         for xref in self.xrefs:
             try:
@@ -527,7 +528,7 @@ class PDFDocument:
         else:
             # return null for a nonexistent reference.
             return None, None
-    
+
     def getobj(self, objid):
         result = self._getobj(objid)
         if result is None:
@@ -537,7 +538,7 @@ class PDFDocument:
             except PDFAlreadyParsed:
                 result = None
         return result
-    
+
     INHERITABLE_ATTRS = {'Resources', 'MediaBox', 'CropBox', 'Rotate'}
     def get_pages(self):
         if not self.xrefs:
@@ -639,7 +640,7 @@ class PDFParser(PSStackParser):
       parser.set_document(doc)
       parser.seek(offset)
       parser.nextobject()
-    
+
     """
 
     def __init__(self, fp):
@@ -659,10 +660,10 @@ class PDFParser(PSStackParser):
     KEYWORD_STARTXREF = KWD('startxref')
     def do_keyword(self, pos, token):
         """Handles PDF-related keywords."""
-        
+
         if token in (self.KEYWORD_XREF, self.KEYWORD_STARTXREF):
             self.add_results(*self.pop(1))
-        
+
         elif token is self.KEYWORD_ENDOBJ:
             self.add_results(*self.pop(4))
 
@@ -714,7 +715,7 @@ class PDFParser(PSStackParser):
         else:
             # others
             self.push((pos, token))
-        
+
 
     def find_xref(self):
         """Internal function used to locate the first XRef."""
@@ -728,7 +729,7 @@ class PDFParser(PSStackParser):
             raise PDFNoValidXRef('Unexpected EOF')
         logger.debug('xref found: pos=%r', m[-1])
         return int(m[-1])
-    
+
     # read xref table
     def read_xref_from(self, start, xrefs):
         """Reads XRefs from the given location."""
